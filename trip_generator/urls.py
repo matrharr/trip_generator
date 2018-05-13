@@ -18,5 +18,5 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^trips/', include('trip_generator.trips.urls', namespace='trips', app_name='trips'))
+    url(r'^trips/', include('trip_generator.trip_urls', namespace='trips', app_name='trips'))
 ]
