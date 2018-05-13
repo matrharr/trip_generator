@@ -1,7 +1,7 @@
 from django.views.generic.base import TemplateView
 from django.shortcuts import redirect
 
-from trip_generator.trips import forms
+from trip_generator import forms
 
 
 class TripFormView(TemplateView):
@@ -16,10 +16,14 @@ class TripFormView(TemplateView):
         context = self.get_context_data()
         form = forms.TripForm(self.request.POST)
         if form.is_valid():
+            # foursquare api call for each destination
+            # create ratio of days in place
+            # for each day, make api call to get recommended
+            # stay and flight if necessary
             return redirect('trips:itinerary')
 
         context['form'] = form
-        return super().render_to_response(context)
+        return super().render_to_response(context=context)
 
 
 class ItineraryView(TemplateView):
