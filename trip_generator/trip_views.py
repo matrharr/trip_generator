@@ -1,5 +1,6 @@
 import json
 import requests
+from datetime import timedelta
 
 from django.views.generic.base import TemplateView
 from django.shortcuts import redirect
@@ -37,9 +38,7 @@ class TripFormView(TemplateView):
 
             self.__create_destinations(destinations, trip)
 
-            itinerary = self.__create_itinerary(
-                trip, departure_date, return_date
-            )
+            itinerary = self.__create_itinerary(trip)
 
             return redirect('trips:itinerary', itinerary_pk=itinerary.pk)
 
@@ -73,10 +72,76 @@ class TripFormView(TemplateView):
 
         Destination.create_trip_day_ratio(destination_objects)
 
-    def __create_itinerary(self, trip, departure_date, return_date):
+    def __create_itinerary(self, trip):
         itinerary = Itinerary.objects.create(trip=trip)
-        itinerary.generate()
+
+        self.__create_itinerary_days(itinerary)
+
         return itinerary
+
+    def __create_itinerary_days(self, itinerary):
+        trip = itinerary.trip
+        num_of_days = trip.number_of_days
+        day = 1
+
+        destinations = trip.destinations
+
+        for dest in destinations:
+            dest.set_days_at_destination(num_of_days)
+
+        current_destination = destinations.pop()
+
+        for day in num_of_days:
+            date = trip.departure_date + timedelta(days=day)
+            itinerary_day = ItineraryDay.objects.create(
+                date=date,
+                itinerary=itinerary,
+            )
+
+            itinerary_day.destinations.add(current_destination)
+
+
+            # TODO: get accommodation
+
+
+            # get flight to next, or flight to finish
+            if day == current_destination.days_at_destination and len(destinations) > 0:
+                # get flight to next destination
+                departure_location = current_destination
+                current_destination = destinations.pop()
+
+                self.__get_flight(
+                    itinerary_day,
+                    departure_location,
+                    current_destination,
+                )
+
+                day += 1
+            elif len(destinations) == 0:
+                # get return flight
+                self.__get_flight(
+                    itinerary_day,
+                    current_destination,
+                    trip.starting_location,
+                )
+
+    def __get_flight(self, itinerary_day, origin, destination):
+        response_flight = API.get_flight(
+            date,
+            origin,
+            destination,
+        )
+
+        flight = Flight.objects.create(
+            departure_time=response_flight.departure_time,
+            arrival_time=response_flight.arrival_time,
+            origin=response_flight.origin,
+            destination=response_flight.destination,
+            price=response_flight.price,
+        )
+
+        itinerary_day.flight = flight
+        itinerary_day.save()
 
 
 class ItineraryView(TemplateView):
