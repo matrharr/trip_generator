@@ -5,6 +5,7 @@ from django.db import models
 
 
 class Trip(models.Model):
+    starting_location = models.CharField(max_length=128)
     departure_date = models.DateField()
     return_date = models.DateField()
     number_of_days = models.IntegerField(
@@ -55,6 +56,7 @@ class Destination(models.Model):
         blank=True,
         null=True,
     )
+
     longitude = models.DecimalField(
         max_digits=9,
         decimal_places=6,
@@ -68,9 +70,16 @@ class Destination(models.Model):
         blank=True,
         null=True,
     )
+
     trip_day_percentage = models.DecimalField(
         max_digits=9,
         decimal_places=6,
+        default=None,
+        blank=True,
+        null=True,
+    )
+
+    days_at_destination = models.IntegerField(
         default=None,
         blank=True,
         null=True,
@@ -85,28 +94,19 @@ class Destination(models.Model):
             dest.trip_day_percentage = percentage
             dest.save()
 
-        return True
+    def set_days_at_destination(self, total_number_of_days):
+        days_at_destination = round(num_of_days * dest.trip_day_percentage)
+        dest.days_at_destination = days_at_destination
+        dest.save()
 
 
 class Itinerary(models.Model):
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE)
 
-    def generate(self):
-        self.get_flights()
-        self.get_accommodations()
-
-    def get_accommodations(self):
-        Accommodation.objects.create()
-        return True
-
-    def get_flights(self):
-        Flight.objects.create(itinerary)
-        return True
-
 
 class Flight(models.Model):
     departure_time = models.DateTimeField()
-    return_time = models.DateTimeField()
+    arrival_time = models.DateTimeField()
 
     origin = models.CharField(max_length=128)
     destination = models.CharField(max_length=128)
@@ -126,7 +126,7 @@ class Accommodation(models.Model):
     country = models.CharField(max_length=128)
 
 
-class TripDay(models.Model):
+class ItineraryDay(models.Model):
     date = models.DateField()
 
     itinerary = models.ForeignKey(Itinerary, on_delete=models.CASCADE)
