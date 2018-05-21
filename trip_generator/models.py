@@ -2,10 +2,16 @@ import json
 import requests
 
 from django.db import models
+from django.conf import settings
 
 
 class Trip(models.Model):
-    starting_location = models.CharField(max_length=128)
+    starting_location = models.CharField(
+        max_length=128,
+        default=None,
+        blank=True,
+        null=True,
+    )
     departure_date = models.DateField()
     return_date = models.DateField()
     number_of_days = models.IntegerField(
@@ -17,28 +23,36 @@ class Trip(models.Model):
 
 class DestinationManager(models.Manager):
     def create_destination(self, location_input, trip):
-        lat, lng = self.__get_lat_lon(location_input)
-        # country = self.__get_country(city)
+        map_object = self.__get_lat_lon(location_input)
         destination = self.create(
-            # city=city,
-            # country=country,
+            city=map_object['city'],
+            country=map_object['country'],
             trip=trip,
-            latitude=lat,
-            longitude=lng,
+            latitude=map_object['lat'],
+            longitude=map_object['lng'],
         )
         return destination
 
     def __get_lat_lon(self, location_input):
-        key = ''
-        base = ''
+        key = settings.GOOGLE_API_KEY
+        base = 'https://maps.googleapis.com/maps/api/geocode/json?'
         query = 'address=' + location_input
         url = base + query + '&key=' + key
         res = requests.get(url=url)
         content = json.loads(res._content.decode())
         lat = content['results'][0]['geometry']['location']['lat']
         lng = content['results'][0]['geometry']['location']['lng']
+        city = content['results'][0]['address_components'][0]['long_name']
+        country = content['results'][0]['address_components'][2]['long_name']
 
-        return lat, lng
+        map_object = {
+            'lat': lat,
+            'lng': lng,
+            'city': city,
+            'country': country,
+        }
+
+        return map_object
 
 
 class Destination(models.Model):
@@ -95,9 +109,9 @@ class Destination(models.Model):
             dest.save()
 
     def set_days_at_destination(self, total_number_of_days):
-        days_at_destination = round(num_of_days * dest.trip_day_percentage)
-        dest.days_at_destination = days_at_destination
-        dest.save()
+        days_at_destination = round(total_number_of_days * self.trip_day_percentage)
+        self.days_at_destination = days_at_destination
+        self.save()
 
 
 class Itinerary(models.Model):

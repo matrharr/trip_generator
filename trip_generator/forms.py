@@ -14,11 +14,11 @@ class TripForm(ModelForm):
     destination_three = CharField(label='Destination 3')
     departure_date = DateField(
         widget=SelectDateWidget,
-        initial=date.today(),
+        initial=date.today() + timedelta(days=1),
     )
     return_date = DateField(
         widget=SelectDateWidget,
-        initial=date.today() + timedelta(days=7),
+        initial=date.today() + timedelta(days=8),
     )
 
     def clean(self):

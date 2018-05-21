@@ -1,1 +1,22 @@
 <h1>this is the itinerary</h1>
+
+
+{% for day in itinerary_days %}
+    <h1>{{ day.date }}</h1>
+    <p>
+        {% for dest in day.destinations.all %}
+            {{ dest.city }}
+            {{ dest.country }}
+        {% endfor %}
+    </p>
+    <p>
+        {% for acc in day.accommodations.all %}
+            {{ acc }}
+        {% endfor %}
+    </p>
+    <p>
+        {% for flight in day.flight.all %}
+            {{ flight.price }}
+        {% endfor %}
+    </p>
+{% endfor %}
